@@ -3,10 +3,16 @@ Use `awscli` and `goaccess` to generate pretty, monthly reports of a few sites I
 ### FreeBSD Setup
 
 ```bash
-pkg install awscli goaccess nginx
+cd
+git clone https://github.com/afreeorange/aws-access-log-reports.git
+
+pkg install awscli goaccess nginx python3.7
 sysrc nginx_enable=YES
 
 # Config is here
 # /usr/local/etc/nginx/nginx.conf
 service nginx start
+
+# cron job
+
 ```

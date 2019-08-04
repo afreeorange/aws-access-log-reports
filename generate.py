@@ -13,13 +13,13 @@ SITES = {
     },
     "log.nikhil.io": {
         "type": "CLOUDFRONT"
-    }
+    },
     "nikhil.io": {
         "type": "CLOUDFRONT"
-    }
+    },
     "public.nikhil.io": {
         "type": "CLOUDFRONT"
-    }
+    },
     "sorry.nikhil.io": {
         "type": "CLOUDFRONT"
     },
