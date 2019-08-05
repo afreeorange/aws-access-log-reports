@@ -1,9 +1,9 @@
 from collections import defaultdict
 from glob import glob
 import os
-import shutil
 import re
 import shlex
+import shutil
 import subprocess
 
 LOGS_BUCKET = "logs.nikhil.io"
@@ -55,11 +55,10 @@ def sync_logs(site_name, bucket=LOGS_BUCKET):
 
 
 def generate_report(site_name, year, month, log_type):
-    full_path_to_site_dir = os.path.abspath(f"./{site_name}")
-    stream_command = f"cat {full_path_to_site_dir}/logs/*{year}-{month}*"
+    stream_command = f"cat ./{site_name}/logs/*{year}-{month}*"
 
     if log_type == "CLOUDFRONT":
-        stream_command = f"gunzip -c {full_path_to_site_dir}/logs/*{year}-{month}*.gz"
+        stream_command = f"gunzip -c ./{site_name}/logs/*{year}-{month}*.gz"
 
     report_command = f"""
         goaccess \
@@ -71,7 +70,7 @@ def generate_report(site_name, year, month, log_type):
             --exclude-ip $(curl --silent "https://api.ipify.org") \
             --with-output-resolver \
             --json-pretty-print \
-            --db-path={full_path_to_site_dir}/db/ \
+            --db-path=./{site_name}/db/ \
             --keep-db-files \
             --output=./reports/{site_name}/{year}/{month}/index.html \
             --html-prefs='{{"theme":"bright"}}'
@@ -90,7 +89,7 @@ def unique_years_and_months(site_name):
     d = defaultdict(list)
     ret = {}
 
-    for path in glob(f"{site_name}/logs/*"):
+    for path in glob(f"./{site_name}/logs/*"):
         s = re.search(r".*(\d{4})-(\d{2}).*", path)
         d[s.group(1)].append(s.group(2))
 
@@ -112,3 +111,4 @@ if __name__ == "__main__":
 
                 print(f"Generating report for {site_name} for {year}/{month}")
                 generate_report(site_name, year, month, SITES[site_name]["type"])
+

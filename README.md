@@ -3,9 +3,7 @@ Use `awscli` and `goaccess` to generate pretty, monthly reports of a few sites I
 ### FreeBSD Setup
 
 ```bash
-cd
-git clone https://github.com/afreeorange/aws-access-log-reports.git
-
+# Install deps
 pkg install awscli goaccess nginx python3.7
 sysrc nginx_enable=YES
 
@@ -13,6 +11,13 @@ sysrc nginx_enable=YES
 # /usr/local/etc/nginx/nginx.conf
 service nginx start
 
-# cron job
+# Get script
+git clone https://github.com/afreeorange/aws-access-log-reports.git
+cd aws-access-log-reports
+
+# Update GeoIP Database
+bash update-geoip-db.sh
+
+# Cron job
 
 ```
