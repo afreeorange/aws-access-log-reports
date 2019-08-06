@@ -7,22 +7,19 @@ import shutil
 import subprocess
 
 LOGS_BUCKET = "logs.nikhil.io"
+PUBLIC_TARGET = "logs.nikhil.io/public"
 SITES = {
-    "freeorange.net": {
-        "type": "AWSS3"
-    },
-    "log.nikhil.io": {
-        "type": "CLOUDFRONT"
-    },
-    "nikhil.io": {
-        "type": "CLOUDFRONT"
-    },
-    "public.nikhil.io": {
-        "type": "CLOUDFRONT"
-    },
-    "sorry.nikhil.io": {
-        "type": "CLOUDFRONT"
-    },
+    "freeorange.net": {"type": "AWSS3"},
+    # "log.nikhil.io": {
+    #     "type": "CLOUDFRONT"
+    # },
+    # "nikhil.io": {
+    #     "type": "CLOUDFRONT"
+    # },
+    # "public.nikhil.io": {
+    #     "type": "CLOUDFRONT"
+    # },
+    "sorry.nikhil.io": {"type": "CLOUDFRONT"},
 }
 
 
@@ -49,16 +46,25 @@ def prepare_report_folder(site_name, year, month):
 
 
 def sync_logs(site_name, bucket=LOGS_BUCKET):
-    subprocess.run(
-        shlex.split(f'aws s3 sync "s3://{bucket}/{site_name}/" "./{site_name}/logs/"')
-    )
+    subprocess.run(shlex.split(f'aws s3 sync "s3://{bucket}/{site_name}/" "./{site_name}/logs/"'))
 
 
-def generate_report(site_name, year, month, log_type):
-    stream_command = f"cat ./{site_name}/logs/*{year}-{month}*"
+def sync_reports(bucket=LOGS_BUCKET):
+    subprocess.run(shlex.split(f"aws s3 sync reports/ s3://{PUBLIC_TARGET}/"))
 
+
+def generate_report(site_name, log_type, year, month=None):
+    # Yearly vs monthly report
+    the_glob = f'*{year}-{month}*'
+    report_path = f'./reports/{site_name}/{year}/{month}/index.html'
+    if month is None:
+        the_glob = f'*{year}*'
+        report_path = f'./reports/{site_name}/{year}/index.html'
+
+    # Handle S3 and CloudFront logs
+    stream_command = f"cat ./{site_name}/logs/{the_glob}"
     if log_type == "CLOUDFRONT":
-        stream_command = f"gunzip -c ./{site_name}/logs/*{year}-{month}*.gz"
+        stream_command = f"gunzip -c ./{site_name}/logs/{the_glob}.gz"
 
     report_command = f"""
         goaccess \
@@ -72,7 +78,7 @@ def generate_report(site_name, year, month, log_type):
             --json-pretty-print \
             --db-path=./{site_name}/db/ \
             --keep-db-files \
-            --output=./reports/{site_name}/{year}/{month}/index.html \
+            --output={report_path} \
             --html-prefs='{{"theme":"bright"}}'
         """
 
@@ -103,12 +109,18 @@ if __name__ == "__main__":
     for site_name in SITES.keys():
         # clean_logs(site_name)
         prepare_site_folder(site_name)
+
+        print('>>>', site_name)
         sync_logs(site_name)
 
         for year, months in unique_years_and_months(site_name).items():
+            print(f"Generating report for {site_name} for {year}")
+            generate_report(site_name, SITES[site_name]["type"], year)
+
             for month in months:
                 prepare_report_folder(site_name, year, month)
 
                 print(f"Generating report for {site_name} for {year}/{month}")
-                generate_report(site_name, year, month, SITES[site_name]["type"])
+                generate_report(site_name, SITES[site_name]["type"], year, month)
 
+    sync_reports()
