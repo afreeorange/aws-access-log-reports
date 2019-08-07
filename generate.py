@@ -7,18 +7,12 @@ import shutil
 import subprocess
 
 LOGS_BUCKET = "logs.nikhil.io"
-PUBLIC_TARGET = "logs.nikhil.io/public"
+PUBLIC_TARGET = "reports.nikhil.io"
 SITES = {
     "freeorange.net": {"type": "AWSS3"},
-    # "log.nikhil.io": {
-    #     "type": "CLOUDFRONT"
-    # },
-    # "nikhil.io": {
-    #     "type": "CLOUDFRONT"
-    # },
-    # "public.nikhil.io": {
-    #     "type": "CLOUDFRONT"
-    # },
+    "log.nikhil.io": {"type": "CLOUDFRONT"},
+    "nikhil.io": {"type": "AWSS3"},
+    "public.nikhil.io": {"type": "AWSS3"},
     "sorry.nikhil.io": {"type": "CLOUDFRONT"},
 }
 
@@ -46,7 +40,9 @@ def prepare_report_folder(site_name, year, month):
 
 
 def sync_logs(site_name, bucket=LOGS_BUCKET):
-    subprocess.run(shlex.split(f'aws s3 sync "s3://{bucket}/{site_name}/" "./{site_name}/logs/"'))
+    subprocess.run(
+        shlex.split(f'aws s3 sync "s3://{bucket}/{site_name}/" "./{site_name}/logs/"')
+    )
 
 
 def sync_reports(bucket=LOGS_BUCKET):
@@ -55,11 +51,11 @@ def sync_reports(bucket=LOGS_BUCKET):
 
 def generate_report(site_name, log_type, year, month=None):
     # Yearly vs monthly report
-    the_glob = f'*{year}-{month}*'
-    report_path = f'./reports/{site_name}/{year}/{month}/index.html'
+    the_glob = f"*{year}-{month}*"
+    report_path = f"./reports/{site_name}/{year}/{month}/index.html"
     if month is None:
-        the_glob = f'*{year}*'
-        report_path = f'./reports/{site_name}/{year}/index.html'
+        the_glob = f"*{year}*"
+        report_path = f"./reports/{site_name}/{year}/index.html"
 
     # Handle S3 and CloudFront logs
     stream_command = f"cat ./{site_name}/logs/{the_glob}"
@@ -110,7 +106,7 @@ if __name__ == "__main__":
         # clean_logs(site_name)
         prepare_site_folder(site_name)
 
-        print('>>>', site_name)
+        print(">>>", site_name)
         sync_logs(site_name)
 
         for year, months in unique_years_and_months(site_name).items():
