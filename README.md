@@ -1,23 +1,30 @@
 Use `awscli` and `goaccess` to generate pretty, monthly reports of a few sites I have deployed in S3/CloudFront. Runs in a FreeNAS Jail. Uploads reports to an S3 bucket when done.
 
-### FreeBSD Setup
+### Setup
+
+On FreeBSD 11.2. FreshPorts' package is not compiled with support for Tokyo Cabinet. A bit more [involved](https://github.com/allinurl/goaccess/issues/1467) than that I thought it would be.
 
 ```bash
 # Install deps
-pkg install awscli goaccess nginx python3.7
-sysrc nginx_enable=YES
+pkg install tcb gettext libmaxminddb automake python3.7 geoipupdate awscli
 
-# Config is here
-# /usr/local/etc/nginx/nginx.conf
-service nginx start
+# Compile goaccess
+git clone https://github.com/allinurl/goaccess.git
+cd goaccess
+autoreconf -fiv
+./configure \
+    --enable-utf8 \
+    --enable-geoip=mmdb \
+    --enable-tcb=btree \
+    CFLAGS="-I/usr/local/include" \
+    LDFLAGS="-L/usr/local/lib"
+make
+make install
+```
 
-# Get script
-git clone https://github.com/afreeorange/aws-access-log-reports.git
-cd aws-access-log-reports
+### Crontab
 
-# Create/Update GeoIP Database
-bash update-geoip-db.sh
-
-# Run!
-python generate.py
+```
+0  0 * * * /usr/local/bin/geoipupdate -d $LOG_ROOT/geoip/
+10 0 * * * $LOG_ROOT && python3 generate.py
 ```
