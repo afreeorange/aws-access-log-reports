@@ -6,7 +6,14 @@ On FreeBSD 11.2. FreshPorts' package is not compiled with support for Tokyo Cabi
 
 ```bash
 # Install deps
-pkg install tcb gettext libmaxminddb automake python3.7 geoipupdate awscli
+pkg install \
+    tcb \
+    gettext \
+    libmaxminddb \
+    automake \
+    python3.7 \
+    geoipupdate \
+    awscli
 
 # Compile goaccess
 git clone https://github.com/allinurl/goaccess.git
@@ -18,8 +25,12 @@ autoreconf -fiv
     --enable-tcb=btree \
     CFLAGS="-I/usr/local/include" \
     LDFLAGS="-L/usr/local/lib"
+
 make
 make install
+
+# Folder setup
+mkdir -p $LOG_ROOT/geoip/
 ```
 
 ### Crontab
