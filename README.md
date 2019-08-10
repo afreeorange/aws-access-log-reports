@@ -1,4 +1,7 @@
-Use `awscli` and `goaccess` to generate pretty, monthly reports of a few sites I have deployed in S3/CloudFront. Runs in a FreeNAS Jail. Uploads reports to an S3 bucket when done.
+Use `awscli` and `goaccess` to generate pretty, monthly reports of a few sites I have deployed in S3/CloudFront. Runs in a FreeNAS Jail. Involves two separate buckets
+
+1. One that collects all the logs and has a 30-day expiration rule on all objects
+2. Another that simply hosts the reports 👍
 
 ### Setup
 
@@ -36,6 +39,9 @@ mkdir -p $LOG_ROOT/geoip/
 ### Crontab
 
 ```
+# Update the free GeoIP2 databases
 0  0 * * * /usr/local/bin/geoipupdate -d $LOG_ROOT/geoip/ >> /dev/null 2>&1
+
+# Generate access reports
 10 0 * * * $LOG_ROOT && python3 generate.py >> $LOG_ROOT/debug.log 2>&1
 ```
