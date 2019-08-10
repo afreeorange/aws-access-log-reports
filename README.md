@@ -36,6 +36,6 @@ mkdir -p $LOG_ROOT/geoip/
 ### Crontab
 
 ```
-0  0 * * * /usr/local/bin/geoipupdate -d $LOG_ROOT/geoip/
-10 0 * * * $LOG_ROOT && python3 generate.py
+0  0 * * * /usr/local/bin/geoipupdate -d $LOG_ROOT/geoip/ >> /dev/null 2>&1
+10 0 * * * $LOG_ROOT && python3 generate.py >> $LOG_ROOT/debug.log 2>&1
 ```
