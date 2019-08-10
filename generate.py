@@ -75,7 +75,8 @@ def generate_report(site_name, log_type, year, month=None):
             --db-path=./{site_name}/db/ \
             --keep-db-files \
             --output={report_path} \
-            --html-prefs='{{"theme":"bright"}}'
+            --html-prefs='{{"theme":"bright"}}'\
+            --html-custom-css=./custom.css
         """
 
     process_stream = subprocess.Popen(
