@@ -86,8 +86,6 @@ def generate_report(site_name, log_type, year, month=None):
             --html-custom-css=/custom.css \
             --html-report-title='{report_title}'
         """
-    print('>>> Running', report_command)
-
     process_stream = subprocess.Popen(
         stream_command, shell=True, stdout=subprocess.PIPE
     )
