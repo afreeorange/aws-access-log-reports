@@ -26,8 +26,8 @@ def clean_logs(site_name):
 
 def prepare_site_folder(site_name):
     try:
-        os.makedirs(f"{site_name}/logs")
-        os.makedirs(f"{site_name}/db")
+        os.makedirs(f"{site_name}/logs", exist_ok=True)
+        os.makedirs(f"{site_name}/db", exist_ok=True)
     except FileExistsError:
         pass
 
@@ -111,10 +111,12 @@ def unique_years_and_months(site_name):
 
 if __name__ == "__main__":
     for site_name in SITES.keys():
+        print(">>>", site_name)
+
         # clean_logs(site_name)
+        print("Preparing data folders")
         prepare_site_folder(site_name)
 
-        print(">>>", site_name)
         print("Syncing logs")
         sync_logs(site_name)
 
