@@ -42,12 +42,12 @@ def prepare_report_folder(site_name, year, month):
 
 def sync_logs(site_name, bucket=LOGS_BUCKET):
     subprocess.run(
-        shlex.split(f'aws s3 sync "s3://{bucket}/{site_name}/" "./{site_name}/logs/"')
+        shlex.split(f'aws s3 sync --quiet "s3://{bucket}/{site_name}/" "./{site_name}/logs/"')
     )
 
 
 def sync_reports(bucket=LOGS_BUCKET):
-    subprocess.run(shlex.split(f"aws s3 sync reports/ s3://{PUBLIC_TARGET}/"))
+    subprocess.run(shlex.split(f"aws s3 sync --quiet reports/ s3://{PUBLIC_TARGET}/"))
 
 
 def generate_report(site_name, log_type, year, month=None):
@@ -115,6 +115,7 @@ if __name__ == "__main__":
         prepare_site_folder(site_name)
 
         print(">>>", site_name)
+        print("Syncing logs")
         sync_logs(site_name)
 
         for year, months in unique_years_and_months(site_name).items():
@@ -127,4 +128,5 @@ if __name__ == "__main__":
                 print(f"Generating report for {site_name} for {year}/{month}")
                 generate_report(site_name, SITES[site_name]["type"], year, month)
 
+    print("Syncing reports")
     sync_reports()
