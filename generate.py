@@ -35,6 +35,7 @@ def prepare_site_folder(site_name):
 def prepare_report_folder(site_name, year, month):
     try:
         os.makedirs(f"./reports/{site_name}/{year}/{month}")
+        shutil.copyfile("./custom.css", f"./reports/{site_name}")
     except FileExistsError:
         pass
 
@@ -53,31 +54,39 @@ def generate_report(site_name, log_type, year, month=None):
     # Yearly vs monthly report
     the_glob = f"*{year}-{month}*"
     report_path = f"./reports/{site_name}/{year}/{month}/index.html"
+    report_title = f"{site_name} - {year} - {month}"
     if month is None:
         the_glob = f"*{year}*"
         report_path = f"./reports/{site_name}/{year}/index.html"
+        report_title = f"{site_name} - {year}"
 
     # Handle S3 and CloudFront logs
     stream_command = f"cat ./{site_name}/logs/{the_glob}"
     if log_type == "CLOUDFRONT":
         stream_command = f"gunzip -c ./{site_name}/logs/{the_glob}.gz"
 
+    # Create DB if first time setup. Load from DB otherwise...
+    db_load_flags = "--keep-db-files"
+    if len(os.listdir(f"./{site_name}/db")) != 0:
+        db_load_flags = "--load-from-disk"
+
     report_command = f"""
         goaccess \
             --log-format {log_type} - \
             --geoip-database=./geoip/GeoLite2-City.mmdb \
+            --with-output-resolver \
             --agent-list \
             --ignore-crawlers \
             --real-os \
-            --exclude-ip $(curl --silent "https://api.ipify.org") \
-            --with-output-resolver \
             --json-pretty-print \
+            {db_load_flags} \
             --db-path=./{site_name}/db/ \
-            --keep-db-files \
             --output={report_path} \
             --html-prefs='{{"theme":"bright"}}'\
-            --html-custom-css=./custom.css
+            --html-custom-css=/custom.css \
+            --html-report-title='{report_title}'
         """
+    print('>>> Running', report_command)
 
     process_stream = subprocess.Popen(
         stream_command, shell=True, stdout=subprocess.PIPE
