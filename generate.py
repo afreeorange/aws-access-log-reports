@@ -9,10 +9,10 @@ import subprocess
 LOGS_BUCKET = "logs.nikhil.io"
 PUBLIC_TARGET = "reports.nikhil.io"
 SITES = {
-    "freeorange.net": {"type": "AWSS3"},
+    "freeorange.net": {"type": "CLOUDFRONT"},
     "log.nikhil.io": {"type": "CLOUDFRONT"},
-    "nikhil.io": {"type": "AWSS3"},
-    "public.nikhil.io": {"type": "AWSS3"},
+    "nikhil.io": {"type": "CLOUDFRONT"},
+    "public.nikhil.io": {"type": "CLOUDFRONT"},
     "sorry.nikhil.io": {"type": "CLOUDFRONT"},
 }
 
@@ -35,7 +35,7 @@ def prepare_site_folder(site_name):
 def prepare_report_folder(site_name, year, month):
     try:
         os.makedirs(f"./reports/{site_name}/{year}/{month}")
-        shutil.copyfile("./custom.css", f"./reports/{site_name}")
+        shutil.copyfile("./custom.css", f"./reports/{site_name}/custom.css")
     except FileExistsError:
         pass
 
