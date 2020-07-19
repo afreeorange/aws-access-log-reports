@@ -1,7 +1,9 @@
-Use `awscli` and `goaccess` to generate pretty, monthly reports of a few sites I have deployed in S3/CloudFront. Runs in a FreeNAS Jail. Involves two separate buckets
+Uses `goaccess` to generate pretty, **monthly** and **yearly** access logs for a few sites I have deployed in S3/CloudFront. Currently runs in a FreeNAS Jail.
 
-1. One that collects all the logs and has a 30-day expiration rule on all objects
-2. Another that simply hosts the reports 👍
+Involves two separate buckets:
+
+1. One that collects all the logs across all sites and has a 60-day expiration rule on all objects.
+2. Another that [simply hosts the reports](https://reports.nikhil.io/) 🗂
 
 ### Setup
 

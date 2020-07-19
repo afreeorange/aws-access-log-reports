@@ -1,5 +1,11 @@
-*
-!generate.py
-!README.md
-!custom.css
-!custom.js
+.vscode
+.DS_Store
+geoip
+debug.log
+freeorange.net
+log.nikhil.io
+nikhil.io
+public.nikhil.io
+reports
+sorry.nikhil.io
+lolzil.la

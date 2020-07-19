@@ -1,13 +1,17 @@
-from collections import defaultdict
-from glob import glob
 import os
 import re
+import logging
 import shlex
+import sys
 import shutil
 import subprocess
+from collections import defaultdict
+from distutils.spawn import find_executable
+from glob import glob
+
 
 LOGS_BUCKET = "logs.nikhil.io"
-PUBLIC_TARGET = "reports.nikhil.io"
+REPORTS_BUCKET = "reports.nikhil.io"
 SITES = {
     "freeorange.net": {"type": "CLOUDFRONT"},
     "log.nikhil.io": {"type": "CLOUDFRONT"},
@@ -15,9 +19,21 @@ SITES = {
     "public.nikhil.io": {"type": "CLOUDFRONT"},
     "sorry.nikhil.io": {"type": "CLOUDFRONT"},
 }
+REQUIRED_COMMANDS = ["find", "goaccess", "zcat", "aws"]
+
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+log = logging.getLogger("Generator")
+log.info("Asdasd")
 
 
 def clean_logs(site_name):
+    """
+    Removes the local logs copy
+    """
     try:
         shutil.rmtree(f"{site_name}/logs")
     except FileNotFoundError:
@@ -25,6 +41,10 @@ def clean_logs(site_name):
 
 
 def prepare_site_folder(site_name):
+    """
+    Creates a site folder containing a GoAccess database (for faster report
+    generation) and a copy of logs in the logs bucket.
+    """
     try:
         os.makedirs(f"{site_name}/logs", exist_ok=True)
         os.makedirs(f"{site_name}/db", exist_ok=True)
@@ -33,6 +53,9 @@ def prepare_site_folder(site_name):
 
 
 def prepare_report_folder(site_name, year, month):
+    """
+    Creates a report structure locally (year/month) if it doesn't exist
+    """
     try:
         os.makedirs(f"./reports/{site_name}/{year}/{month}")
         shutil.copyfile("./custom.css", f"./reports/{site_name}/custom.css")
@@ -41,33 +64,59 @@ def prepare_report_folder(site_name, year, month):
 
 
 def sync_logs(site_name, bucket=LOGS_BUCKET):
-    subprocess.run(
-        shlex.split(f'aws s3 sync --quiet "s3://{bucket}/{site_name}/" "./{site_name}/logs/"')
+    """
+    Syncs S3 or CloudFront logs from the logs bucket locally **with deletion**
+    """
+    p = subprocess.Popen(
+        f'aws s3 sync "s3://{bucket}/{site_name}/" "./{site_name}/logs/" --delete',
+        shell=True,
     )
+    p.communicate()
+
+    # (out, err) = p.communicate()
+    # log.info(f"Finished syncing. Output: {out}")
+    # log.info(f"Finished syncing. Errors: {err}")
 
 
 def sync_reports(bucket=LOGS_BUCKET):
-    subprocess.run(shlex.split(f"aws s3 sync --quiet reports/ s3://{PUBLIC_TARGET}/"))
+    """
+    Syncs generated HTML reports to the reports bucket **with deletion**
+    """
+    p = subprocess.Popen(
+        f"aws s3 sync reports/ s3://{REPORTS_BUCKET}/ --delete",
+        shell=True,
+    )
+    p.communicate()
 
 
 def generate_report(site_name, log_type, year, month=None):
-    # Yearly vs monthly report
+    """
+    Generates a yearly or monthly report based on the supplied arguments.
+    """
     the_glob = f"*{year}-{month}*"
     report_path = f"./reports/{site_name}/{year}/{month}/index.html"
     report_title = f"{site_name} - {year} - {month}"
+
     if month is None:
         the_glob = f"*{year}*"
         report_path = f"./reports/{site_name}/{year}/index.html"
         report_title = f"{site_name} - {year}"
 
-    # Handle S3 and CloudFront logs
-    stream_command = f"cat ./{site_name}/logs/{the_glob}"
+    # Handle S3 or CloudFront logs. Use find to prevent errors like these:
+    #
+    #   The total size of the argument and environment lists 248kB exceeds the
+    #   operating system limit of 256kB.
+    #
+    stream_command = (
+        f"find ./{site_name}/logs/ -type f -name '{the_glob}' -exec zcat {{}} \\;"
+    )
     if log_type == "CLOUDFRONT":
-        stream_command = f"gunzip -c ./{site_name}/logs/{the_glob}.gz"
+        stream_command = f"find ./{site_name}/logs/ -type f -name '{the_glob}.gz' -exec zcat {{}} \\;"
 
-    # Create DB if first time setup. Load from DB otherwise...
+    # Create DB if first time setup. Load from DB otherwise.
     db_load_flags = "--keep-db-files"
     if len(os.listdir(f"./{site_name}/db")) != 0:
+        log.debug(f"Using local database ./{site_name}/db")
         db_load_flags = "--load-from-disk"
 
     report_command = f"""
@@ -86,12 +135,15 @@ def generate_report(site_name, log_type, year, month=None):
             --html-custom-css=/custom.css \
             --html-report-title='{report_title}'
         """
+
     process_stream = subprocess.Popen(
         stream_command, shell=True, stdout=subprocess.PIPE
     )
+
     process_logs = subprocess.Popen(
         report_command, shell=True, stdin=process_stream.stdout
     )
+
     process_logs.communicate()[0]
 
 
@@ -110,25 +162,33 @@ def unique_years_and_months(site_name):
 
 
 if __name__ == "__main__":
-    for site_name in SITES.keys():
-        print(">>>", site_name)
 
-        # clean_logs(site_name)
-        print("Preparing data folders")
+    for command in REQUIRED_COMMANDS:
+        if find_executable(command) is None:
+            log.error(f"! Could not find the command '{command}' in PATH. Quitting.")
+            sys.exit(1)
+
+    for site_name in SITES.keys():
+        log.info(f"Starting {site_name}")
+        log.info("-" * (8 + len(site_name)))
+
+        log.info("Preparing data folders")
         prepare_site_folder(site_name)
 
-        print("Syncing logs")
+        log.info("Syncing logs")
         sync_logs(site_name)
 
         for year, months in unique_years_and_months(site_name).items():
-            print(f"Generating report for {site_name} for {year}")
+            log.info(f"Generating report for {site_name} for {year}")
             generate_report(site_name, SITES[site_name]["type"], year)
 
             for month in months:
                 prepare_report_folder(site_name, year, month)
 
-                print(f"Generating report for {site_name} for {year}/{month}")
+                log.info(f"Generating report for {site_name} for {year}/{month}")
                 generate_report(site_name, SITES[site_name]["type"], year, month)
 
-    print("Syncing reports")
+        log.info("-" * (8 + len(site_name)))
+
+    log.info("Syncing all reports")
     sync_reports()
