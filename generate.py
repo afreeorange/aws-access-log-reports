@@ -83,7 +83,7 @@ def sync_reports(bucket=LOGS_BUCKET):
     Syncs generated HTML reports to the reports bucket **with deletion**
     """
     p = subprocess.Popen(
-        f"aws s3 sync reports/ s3://{REPORTS_BUCKET}/ --delete",
+        f"aws s3 sync reports/ s3://{REPORTS_BUCKET}/",
         shell=True,
     )
     p.communicate()
