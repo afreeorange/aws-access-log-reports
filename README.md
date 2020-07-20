@@ -5,6 +5,8 @@ Involves two separate buckets:
 1. One that collects all the logs across all sites and has a 60-day expiration rule on all objects.
 2. Another that [simply hosts the reports](https://reports.nikhil.io/) 🗂
 
+Requires `goaccess` v1.4+
+
 ### Setup
 
 On FreeBSD 11.2. FreshPorts' package is not compiled with support for Tokyo Cabinet. A bit more [involved](https://github.com/allinurl/goaccess/issues/1467) than that I thought it would be.
