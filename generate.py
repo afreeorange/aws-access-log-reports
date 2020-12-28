@@ -113,10 +113,10 @@ def generate_report(site_name, log_type, year, month=None):
         stream_command = f"find ./{site_name}/logs/ -type f -name '{the_glob}.gz' -exec zcat {{}} \\;"
 
     # Create DB if first time setup. Load from DB otherwise.
-    db_load_flags = "--keep-db-files"
-    if len(os.listdir(f"./{site_name}/db")) != 0:
-        log.debug(f"Using local database ./{site_name}/db")
-        db_load_flags = "--load-from-disk"
+    # db_load_flags = "--keep-db-files"
+    # if len(os.listdir(f"./{site_name}/db")) != 0:
+    #     log.debug(f"Using local database ./{site_name}/db")
+    #     db_load_flags = "--load-from-disk"
 
     report_command = f"""
         goaccess \
@@ -127,7 +127,6 @@ def generate_report(site_name, log_type, year, month=None):
             --ignore-crawlers \
             --real-os \
             --json-pretty-print \
-            {db_load_flags} \
             --db-path=./{site_name}/db/ \
             --output={report_path} \
             --html-prefs='{{"theme":"bright"}}'\
