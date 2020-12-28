@@ -18,6 +18,7 @@ SITES = {
     "nikhil.io": {"type": "CLOUDFRONT"},
     "public.nikhil.io": {"type": "CLOUDFRONT"},
     "sorry.nikhil.io": {"type": "CLOUDFRONT"},
+    "lolzil.la": {"type": "CLOUDFRONT"},
 }
 REQUIRED_COMMANDS = ["find", "goaccess", "zcat", "aws"]
 
