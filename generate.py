@@ -66,7 +66,7 @@ def sync_logs(site_name, bucket=LOGS_BUCKET):
     Syncs S3 or CloudFront logs from the logs bucket locally **with deletion**
     """
     p = subprocess.Popen(
-        f'aws s3 sync "s3://{bucket}/{site_name}/" "./{site_name}/logs/" --delete',
+        f'aws s3 sync "s3://{bucket}/{site_name}/" "./{site_name}/logs/"',
         shell=True,
     )
     p.communicate()
